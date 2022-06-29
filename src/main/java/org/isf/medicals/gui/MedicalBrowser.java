@@ -26,14 +26,13 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -72,14 +71,15 @@ import org.isf.utils.excel.ExcelExporter;
 import org.isf.utils.exception.OHServiceException;
 import org.isf.utils.exception.gui.OHServiceExceptionUtil;
 import org.isf.utils.jobjects.CustomJDateChooser;
-import org.isf.utils.jobjects.JFromDateToDateChooserDialog;
+import org.isf.utils.jobjects.GoodFromDateToDateChooser;
 import org.isf.utils.jobjects.JMonthYearChooser;
 import org.isf.utils.jobjects.MessageDialog;
 import org.isf.utils.jobjects.ModalJFrame;
-import org.isf.utils.time.Converters;
 import org.isf.utils.time.TimeTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.lgooddatepicker.zinternaltools.WrapLayout;
 
 /**
  * This class shows a complete extended list of medical drugs,
@@ -123,10 +123,6 @@ public class MedicalBrowser extends ModalJFrame implements MedicalListener {
 
 	}
 
-	private static final int DEFAULT_WIDTH = 500;
-	private static final int DEFAULT_HEIGHT = 400;
-	private int pfrmWidth;
-	private int pfrmHeight;
 	private int selectedrow;
 	private JComboBox pbox;
 	private List<Medical> pMedicals;
@@ -166,13 +162,8 @@ public class MedicalBrowser extends ModalJFrame implements MedicalListener {
 	public MedicalBrowser() {
 		me = this;
 		setTitle(MessageBundle.getMessage("angal.medicals.pharmaceuticalbrowser.title"));
-		setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-		Toolkit kit = Toolkit.getDefaultToolkit();
-		Dimension screensize = kit.getScreenSize();
-		pfrmWidth = 940; //screensize.width / 2;
-		pfrmHeight = screensize.height / 2;
-		setBounds((screensize.width - pfrmWidth) / 2, screensize.height / 4, pfrmWidth,
-				pfrmHeight);
+		setPreferredSize(new Dimension(1220, 550));
+		setMinimumSize(new Dimension(940, 550));
 		setContentPane(getContentpane());
 		pack();
 		setVisible(true);
@@ -181,8 +172,7 @@ public class MedicalBrowser extends ModalJFrame implements MedicalListener {
 	}
 
 	private JPanel getContentpane() {
-		JPanel contentPane = new JPanel();
-		contentPane.setLayout(new BorderLayout());
+		JPanel contentPane = new JPanel(new BorderLayout());
 		contentPane.add(getScrollPane(), BorderLayout.CENTER);
 		contentPane.add(getJButtonPanel(), BorderLayout.SOUTH);
 		return contentPane;
@@ -215,7 +205,7 @@ public class MedicalBrowser extends ModalJFrame implements MedicalListener {
 	}
 
 	private JPanel getJButtonPanel() {
-		JPanel buttonPanel = new JPanel();
+		JPanel buttonPanel = new JPanel(new WrapLayout());
 		buttonPanel.add(new JLabel(MessageBundle.getMessage("angal.medicals.selecttype")));
 		buttonPanel.add(getComboBoxMedicalType());
 		buttonPanel.add(getSearchBox());
@@ -411,18 +401,18 @@ public class MedicalBrowser extends ModalJFrame implements MedicalListener {
 				Medical medical = (Medical) (((MedicalBrowsingModel) model).getValueAt(selectedrow, -1));
 
 				// Select Dates
-				JFromDateToDateChooserDialog dataRange = new JFromDateToDateChooserDialog(MedicalBrowser.this);
+				GoodFromDateToDateChooser dataRange = new GoodFromDateToDateChooser(MedicalBrowser.this);
 				dataRange.setTitle(MessageBundle.getMessage("angal.messagedialog.question.title"));
 				dataRange.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 				dataRange.setVisible(true);
 
-				Date dateFrom = dataRange.getDateFrom();
-				Date dateTo = dataRange.getDateTo();
+				LocalDate dateFrom = dataRange.getDateFrom();
+				LocalDate dateTo = dataRange.getDateTo();
 				boolean toExcel = dataRange.isExcel();
 
 				if (!dataRange.isCancel()) {
-					new GenericReportPharmaceuticalStockCard("ProductLedger", Converters.convertToLocalDateTime(dateFrom),
-							Converters.convertToLocalDateTime(dateTo), medical, null, toExcel);
+					new GenericReportPharmaceuticalStockCard("ProductLedger", dateFrom.atStartOfDay(), dateTo.atTime(LocalTime.MAX), medical,
+							null, toExcel);
 				}
 			}
 		});
@@ -765,11 +755,7 @@ public class MedicalBrowser extends ModalJFrame implements MedicalListener {
 			} else if (c == 5) {
 				return minQuantity;
 			} else if (c == 6) {
-				if (actualQty == 0) {
-					return true;
-				} else {
-					return false;
-				}
+				return actualQty == 0;
 			}
 			return null;
 		}

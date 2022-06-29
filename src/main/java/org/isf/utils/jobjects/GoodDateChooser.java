@@ -25,6 +25,8 @@ import static org.isf.utils.Constants.DATE_FORMAT_DD_MM_YYYY;
 
 import java.awt.Panel;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Locale;
 
 import javax.swing.BoxLayout;
@@ -35,13 +37,22 @@ import org.isf.generaldata.GeneralData;
 
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
+import com.github.lgooddatepicker.optionalusertools.DateChangeListener;
 
 public class GoodDateChooser extends Panel {
 
-	public DatePicker datePicker;
-	public DatePickerSettings dateSettings;
+	private DatePicker datePicker;
+	private DatePickerSettings dateSettings;
+
+	public GoodDateChooser() {
+		this(LocalDate.now());
+	}
 
 	public GoodDateChooser(LocalDate date) {
+		this(date, true);
+	}
+
+	public GoodDateChooser(LocalDate date, boolean futureDates) {
 		BoxLayout layout = new BoxLayout(this, BoxLayout.Y_AXIS);
 		this.setLayout(layout);
 		dateSettings = new DatePickerSettings();
@@ -49,6 +60,13 @@ public class GoodDateChooser extends Panel {
 		dateSettings.setFormatForDatesCommonEra(DATE_FORMAT_DD_MM_YYYY);
 		dateSettings.setAllowEmptyDates(true);
 		datePicker = new DatePicker(dateSettings);
+		// This helps the manual editing of the year field not to reset to some *very* old year value
+		if (futureDates) {
+			dateSettings.setDateRangeLimits(LocalDate.of(999, 12, 31), null);
+		} else {
+			// This disallows dates in the future
+			dateSettings.setDateRangeLimits(LocalDate.of(999, 12, 31), LocalDate.now().plusDays(1));
+		}
 		if (date != null) {
 			datePicker.setDate(date);
 		}
@@ -61,6 +79,24 @@ public class GoodDateChooser extends Panel {
 
 	public LocalDate getDate() {
 		return datePicker.getDate();
+	}
+
+	public void setDate(LocalDate localDate) {
+		datePicker.setDate(localDate);
+	}
+
+	public LocalDateTime getDateStartOfDay() {
+		LocalDate localDate = getDate();
+		return localDate != null ? localDate.atStartOfDay() : null;
+	}
+
+	public LocalDateTime getDateEndOfDay() {
+		LocalDate localDate = getDate();
+		return localDate != null ? localDate.atTime(LocalTime.MAX) : null;
+	}
+
+	public void addDateChangeListener(DateChangeListener listener) {
+		datePicker.addDateChangeListener(listener);
 	}
 
 }

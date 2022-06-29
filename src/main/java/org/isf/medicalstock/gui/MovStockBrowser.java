@@ -31,7 +31,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -40,11 +39,10 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +61,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -89,7 +88,7 @@ import org.isf.supplier.model.Supplier;
 import org.isf.utils.excel.ExcelExporter;
 import org.isf.utils.exception.OHServiceException;
 import org.isf.utils.exception.gui.OHServiceExceptionUtil;
-import org.isf.utils.jobjects.DateTextField;
+import org.isf.utils.jobjects.GoodDateChooser;
 import org.isf.utils.jobjects.MessageDialog;
 import org.isf.utils.jobjects.ModalJFrame;
 import org.isf.utils.jobjects.StockCardDialog;
@@ -99,6 +98,8 @@ import org.isf.ward.manager.WardBrowserManager;
 import org.isf.ward.model.Ward;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.lgooddatepicker.zinternaltools.WrapLayout;
 
 /**
  * ------------------------------------------
@@ -115,8 +116,10 @@ import org.slf4j.LoggerFactory;
 public class MovStockBrowser extends ModalJFrame {
 
 	private static final long serialVersionUID = 1L;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(MovStockBrowser.class);
+
+	private static String FROM_LABEL = MessageBundle.getMessage("angal.common.from.txt") + ':';
+	private static String TO_LABEL = MessageBundle.getMessage("angal.common.to.txt") + ':';
 
 	private final JFrame myFrame;
 	private JPanel contentPane;
@@ -135,12 +138,12 @@ public class MovStockBrowser extends ModalJFrame {
 	private JComboBox medicalTypeBox;
 	private JComboBox typeBox;
 	private JComboBox wardBox;
-	private DateTextField movDateFrom;
-	private DateTextField movDateTo;
-	private DateTextField lotPrepFrom;
-	private DateTextField lotPrepTo;
-	private DateTextField lotDueFrom;
-	private DateTextField lotDueTo;
+	private GoodDateChooser movDateFrom;
+	private GoodDateChooser movDateTo;
+	private GoodDateChooser lotPrepFrom;
+	private GoodDateChooser lotPrepTo;
+	private GoodDateChooser lotDueFrom;
+	private GoodDateChooser lotDueTo;
 	private JTable movTable;
 	private JTable jTableTotal;
 	private int totalQti;
@@ -171,8 +174,6 @@ public class MovStockBrowser extends ModalJFrame {
 
 	private int[] pColumnWidth = { 50, 80, 45, 130, 50, 150, 70, 70, 80, 65, 50, 50, 70 };
 
-	private String currencyCod;
-
 	/*
 	 * Adds to facilitate the selection of products
 	 */
@@ -198,20 +199,11 @@ public class MovStockBrowser extends ModalJFrame {
 		} catch (OHServiceException e) {
 			OHServiceExceptionUtil.showMessages(e);
 		}
-
-		Toolkit kit = Toolkit.getDefaultToolkit();
-		Dimension screensize = kit.getScreenSize();
-		final int pfrmBase = 30;
-		final int pfrmWidth = 24;
-		final int pfrmHeight = 22;
-		this.setBounds((screensize.width - screensize.width * pfrmWidth
-				/ pfrmBase) / 2, (screensize.height - screensize.height
-				* pfrmHeight / pfrmBase) / 2, screensize.width * pfrmWidth
-				/ pfrmBase, screensize.height * pfrmHeight / pfrmBase);
 		setContentPane(getContentpane());
 
-		//setResizable(false);
 		updateTotals();
+		setPreferredSize(new Dimension(1150, 655));
+		setMinimumSize(new Dimension(775, 655));
 		pack();
 		setVisible(true);
 		setLocationRelativeTo(null);
@@ -219,8 +211,7 @@ public class MovStockBrowser extends ModalJFrame {
 	}
 
 	private JPanel getContentpane() {
-		contentPane = new JPanel();
-		contentPane.setLayout(new BorderLayout());
+		contentPane = new JPanel(new BorderLayout());
 		contentPane.add(getFilterPanel(), BorderLayout.WEST);
 		contentPane.add(getTablesPanel(), BorderLayout.CENTER);
 		contentPane.add(getButtonPanel(), BorderLayout.SOUTH);
@@ -237,7 +228,7 @@ public class MovStockBrowser extends ModalJFrame {
 	}
 
 	private JPanel getButtonPanel() {
-		buttonPanel = new JPanel();
+		buttonPanel = new JPanel(new WrapLayout());
 		if (MainMenu.checkUserGrants("btnpharmstockcharge")) {
 			buttonPanel.add(getChargeButton());
 		}
@@ -263,18 +254,17 @@ public class MovStockBrowser extends ModalJFrame {
 
 			StockCardDialog stockCardDialog = new StockCardDialog(MovStockBrowser.this,
 					medical,
-					movDateFrom.getCompleteDate(),
-					movDateTo.getCompleteDate());
+					movDateFrom.getDateStartOfDay(),
+					movDateTo.getDateStartOfDay());
 			medical = stockCardDialog.getMedical();
-			LocalDateTime dateFrom = stockCardDialog.getLocalDateTimeFrom();
-			LocalDateTime dateTo = stockCardDialog.getLocalDateTimeTo();
-			boolean toExcel = stockCardDialog.isExcel();
-
 			if (!stockCardDialog.isCancel()) {
 				if (medical == null) {
 					MessageDialog.error(MovStockBrowser.this, "angal.medicalstock.chooseamedical.msg");
 					return;
 				}
+				LocalDateTime dateFrom = stockCardDialog.getLocalDateTimeFrom();
+				LocalDateTime dateTo = stockCardDialog.getLocalDateTimeTo();
+				boolean toExcel = stockCardDialog.isExcel();
 				new GenericReportPharmaceuticalStockCard("ProductLedger", dateFrom, dateTo, medical, null, toExcel);
 			}
 		});
@@ -286,12 +276,9 @@ public class MovStockBrowser extends ModalJFrame {
 		stockLedgerButton.setMnemonic(MessageBundle.getMnemonic("angal.common.stockledger.btn.key"));
 		stockLedgerButton.addActionListener(actionEvent -> {
 
-			StockLedgerDialog stockCardDialog = new StockLedgerDialog(MovStockBrowser.this, movDateFrom.getCompleteDate(), movDateTo.getCompleteDate());
-			LocalDateTime dateFrom = stockCardDialog.getLocalDateTimeTo();
-			LocalDateTime dateTo = stockCardDialog.getLocalDateTimeTo();
-
+			StockLedgerDialog stockCardDialog = new StockLedgerDialog(MovStockBrowser.this, movDateFrom.getDateStartOfDay(), movDateTo.getDateStartOfDay());
 			if (!stockCardDialog.isCancel()) {
-				new GenericReportPharmaceuticalStockCard("ProductLedger_multi", dateFrom, dateTo, null, null, false);
+				new GenericReportPharmaceuticalStockCard("ProductLedger_multi", stockCardDialog.getLocalDateTimeFrom(), stockCardDialog.getLocalDateTimeTo(), null, null, false);
 			}
 		});
 		return stockLedgerButton;
@@ -323,7 +310,7 @@ public class MovStockBrowser extends ModalJFrame {
 		}
 		scrollPane.setPreferredSize(new Dimension(totWidth, 20));
 		scrollPane.setColumnHeaderView(null);
-		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
 		return scrollPane;
 	}
 
@@ -435,13 +422,13 @@ public class MovStockBrowser extends ModalJFrame {
 		movementPanel.add(label4Panel);
 
 		JPanel moveFromPanel = new JPanel(new BorderLayout());
-		JLabel labelFrom = new JLabel(MessageBundle.getMessage("angal.common.from.txt"));
+		JLabel labelFrom = new JLabel(FROM_LABEL);
 		labelFrom.setVerticalAlignment(SwingConstants.TOP);
 		moveFromPanel.add(labelFrom, BorderLayout.WEST);
 		moveFromPanel.add(getMovDateFrom(), BorderLayout.EAST);
 		movementPanel.add(moveFromPanel);
 		JPanel moveToPanel = new JPanel(new BorderLayout());
-		JLabel labelTo = new JLabel(MessageBundle.getMessage("angal.common.to.txt"));
+		JLabel labelTo = new JLabel(TO_LABEL);
 		labelTo.setVerticalAlignment(SwingConstants.TOP);
 		moveToPanel.add(labelTo, BorderLayout.WEST);
 		moveToPanel.add(getMovDateTo(), BorderLayout.EAST);
@@ -458,11 +445,11 @@ public class MovStockBrowser extends ModalJFrame {
 				MessageBundle.getMessage("angal.medicalstock.lotpreparationdate")));
 
 		JPanel lotPrepFromPanel = new JPanel(new BorderLayout());
-		lotPrepFromPanel.add(new JLabel(MessageBundle.getMessage("angal.common.from.txt")), BorderLayout.WEST);
+		lotPrepFromPanel.add(new JLabel(FROM_LABEL), BorderLayout.WEST);
 		lotPrepFromPanel.add(getLotPrepFrom(), BorderLayout.EAST);
 		lotPreparationDatePanel.add(lotPrepFromPanel);
 		JPanel lotPrepToPanel = new JPanel(new BorderLayout());
-		lotPrepToPanel.add(new JLabel(MessageBundle.getMessage("angal.common.to.txt")), BorderLayout.WEST);
+		lotPrepToPanel.add(new JLabel(TO_LABEL), BorderLayout.WEST);
 		lotPrepToPanel.add(getLotPrepTo(), BorderLayout.EAST);
 		lotPreparationDatePanel.add(lotPrepToPanel);
 
@@ -477,11 +464,11 @@ public class MovStockBrowser extends ModalJFrame {
 				BorderFactory.createLineBorder(Color.GRAY), MessageBundle.getMessage("angal.medicalstock.lotduedate")));
 
 		JPanel lotDueFromPanel = new JPanel(new BorderLayout());
-		lotDueFromPanel.add(new JLabel(MessageBundle.getMessage("angal.common.from.txt")), BorderLayout.WEST);
+		lotDueFromPanel.add(new JLabel(FROM_LABEL), BorderLayout.WEST);
 		lotDueFromPanel.add(getLotDueFrom(), BorderLayout.EAST);
 		lotDueDatePanel.add(lotDueFromPanel);
 		JPanel lotDueToPanel = new JPanel(new BorderLayout());
-		lotDueToPanel.add(new JLabel(MessageBundle.getMessage("angal.common.to.txt")), BorderLayout.WEST);
+		lotDueToPanel.add(new JLabel(TO_LABEL), BorderLayout.WEST);
 		lotDueToPanel.add(getLotDueTo(), BorderLayout.EAST);
 		lotDueDatePanel.add(lotDueToPanel);
 
@@ -769,35 +756,33 @@ public class MovStockBrowser extends ModalJFrame {
 		return jTableTotal;
 	}
 
-	private DateTextField getMovDateFrom() {
-		GregorianCalendar time = new GregorianCalendar();
-		time.add(Calendar.WEEK_OF_YEAR, -1);
-		movDateFrom = new DateTextField(time);
+	private GoodDateChooser getMovDateFrom() {
+		movDateFrom = new GoodDateChooser(LocalDate.now().minusWeeks(1));
 		return movDateFrom;
 	}
 
-	private DateTextField getMovDateTo() {
-		movDateTo = new DateTextField(new GregorianCalendar());
+	private GoodDateChooser getMovDateTo() {
+		movDateTo = new GoodDateChooser();
 		return movDateTo;
 	}
 
-	private DateTextField getLotPrepFrom() {
-		lotPrepFrom = new DateTextField();
+	private GoodDateChooser getLotPrepFrom() {
+		lotPrepFrom = new GoodDateChooser(null);
 		return lotPrepFrom;
 	}
 
-	private DateTextField getLotPrepTo() {
-		lotPrepTo = new DateTextField();
+	private GoodDateChooser getLotPrepTo() {
+		lotPrepTo = new GoodDateChooser(null);
 		return lotPrepTo;
 	}
 
-	private DateTextField getLotDueFrom() {
-		lotDueFrom = new DateTextField();
+	private GoodDateChooser getLotDueFrom() {
+		lotDueFrom = new GoodDateChooser(null);
 		return lotDueFrom;
 	}
 
-	private DateTextField getLotDueTo() {
-		lotDueTo = new DateTextField();
+	private GoodDateChooser getLotDueTo() {
+		lotDueTo = new GoodDateChooser(null);
 		return lotDueTo;
 	}
 
@@ -816,8 +801,8 @@ public class MovStockBrowser extends ModalJFrame {
 			String wardSelected = null;
 			boolean dateOk = true;
 
-			LocalDateTime movFrom = movDateFrom.getCompleteDate();
-			LocalDateTime movTo = movDateTo.getCompleteDate();
+			LocalDateTime movFrom = movDateFrom.getDateStartOfDay();
+			LocalDateTime movTo = movDateTo.getDateStartOfDay();
 			if ((movFrom == null) || (movTo == null)) {
 				if (!((movFrom == null) && (movTo == null))) {
 					MessageDialog.error(null, "angal.medicalstock.chooseavalidmovementdate.msg");
@@ -829,8 +814,8 @@ public class MovStockBrowser extends ModalJFrame {
 			}
 
 			if (!isAutomaticLot()) {
-				LocalDateTime prepFrom = lotPrepFrom.getCompleteDate();
-				LocalDateTime prepTo = lotPrepTo.getCompleteDate();
+				LocalDateTime prepFrom = lotPrepFrom.getDateStartOfDay();
+				LocalDateTime prepTo = lotPrepTo.getDateStartOfDay();
 				if ((prepFrom == null) || (prepTo == null)) {
 					if (!((prepFrom == null) && (prepTo == null))) {
 						MessageDialog.error(null, "angal.medicalstock.chooseavalidpreparationdate");
@@ -842,8 +827,8 @@ public class MovStockBrowser extends ModalJFrame {
 				}
 			}
 
-			LocalDateTime dueFrom = lotDueFrom.getCompleteDate();
-			LocalDateTime dueTo = lotDueTo.getCompleteDate();
+			LocalDateTime dueFrom = lotDueFrom.getDateStartOfDay();
+			LocalDateTime dueTo = lotDueTo.getDateStartOfDay();
 			if ((dueFrom == null) || (dueTo == null)) {
 				if (!((dueFrom == null) && (dueTo == null))) {
 					MessageDialog.error(null, "angal.medicalstock.chooseavalidduedate.msg");
@@ -877,21 +862,21 @@ public class MovStockBrowser extends ModalJFrame {
 				if (!isAutomaticLot()) {
 					model = new MovBrowserModel(medicalSelected,
 							medicalTypeSelected, wardSelected, typeSelected,
-							movDateFrom.getCompleteDate(),
-							movDateTo.getCompleteDate(),
-							lotPrepFrom.getCompleteDate(),
-							lotPrepTo.getCompleteDate(),
-							lotDueFrom.getCompleteDate(),
-							lotDueTo.getCompleteDate());
+							movDateFrom.getDateStartOfDay(),
+							movDateTo.getDateStartOfDay(),
+							lotPrepFrom.getDateStartOfDay(),
+							lotPrepTo.getDateStartOfDay(),
+							lotDueFrom.getDateStartOfDay(),
+							lotDueTo.getDateStartOfDay());
 				} else {
 					model = new MovBrowserModel(medicalSelected,
 							medicalTypeSelected, wardSelected, typeSelected,
-							movDateFrom.getCompleteDate(),
-							movDateTo.getCompleteDate(),
+							movDateFrom.getDateStartOfDay(),
+							movDateTo.getDateStartOfDay(),
 							null,
 							null,
-							lotDueFrom.getCompleteDate(),
-							lotDueTo.getCompleteDate());
+							lotDueFrom.getDateStartOfDay(),
+							lotDueTo.getDateStartOfDay());
 				}
 
 				if (moves != null) {
@@ -927,7 +912,6 @@ public class MovStockBrowser extends ModalJFrame {
 		chargeButton.addActionListener(actionEvent -> {
 			new MovStockMultipleCharging(myFrame);
 			model = new MovBrowserModel();
-			//model.fireTableDataChanged();
 			movTable.updateUI();
 			updateTotals();
 			if (jCheckBoxKeepFilter.isSelected()) {
@@ -948,7 +932,6 @@ public class MovStockBrowser extends ModalJFrame {
 		dischargeButton.addActionListener(actionEvent -> {
 			new MovStockMultipleDischarging(myFrame);
 			model = new MovBrowserModel();
-			//model.fireTableDataChanged();
 			movTable.updateUI();
 			updateTotals();
 			if (jCheckBoxKeepFilter.isSelected()) {
@@ -1010,8 +993,8 @@ public class MovStockBrowser extends ModalJFrame {
 				!wardBox.getSelectedItem().equals(MessageBundle.getMessage("angal.common.all.txt"))) {
 			filename.append('_').append(wardBox.getSelectedItem());
 		}
-		filename.append('_').append(TimeTools.formatDateTime(movDateFrom.getCompleteDate(), DATE_FORMAT_YYYYMMDD))
-				.append('_').append(TimeTools.formatDateTime(movDateTo.getCompleteDate(), DATE_FORMAT_YYYYMMDD));
+		filename.append('_').append(TimeTools.formatDateTime(movDateFrom.getDateStartOfDay(), DATE_FORMAT_YYYYMMDD))
+				.append('_').append(TimeTools.formatDateTime(movDateTo.getDateStartOfDay(), DATE_FORMAT_YYYYMMDD));
 		return filename.toString();
 	}
 

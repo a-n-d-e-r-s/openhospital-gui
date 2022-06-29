@@ -95,6 +95,7 @@ import org.isf.utils.time.TimeTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.lgooddatepicker.zinternaltools.WrapLayout;
 import com.toedter.calendar.JMonthChooser;
 import com.toedter.calendar.JYearChooser;
 
@@ -175,7 +176,7 @@ public class BillBrowser extends ModalJFrame implements PatientBillListener {
 	private LocalDateTime dateFrom = LocalDateTime.now();
 	private LocalDateTime dateTo = LocalDateTime.now();
 	private LocalDateTime dateToday0 = LocalDate.now().atStartOfDay();
-	private LocalDateTime dateToday24 = LocalDate.now().atTime(23, 59, 59);
+	private LocalDateTime dateToday24 = LocalDate.now().atTime(LocalTime.MAX);
 
 	private JButton jButtonToday;
 
@@ -322,7 +323,7 @@ public class BillBrowser extends ModalJFrame implements PatientBillListener {
 				jCalendarTo.setDate((Date) propertyChangeEvent.getNewValue());
 				dateTo = Converters.convertToLocalDateTime((Date) propertyChangeEvent.getNewValue())
 						.toLocalDate()
-						.atTime(23, 59, 59);
+						.atTime(LocalTime.MAX);
 				jButtonToday.setEnabled(true);
 				billInserted(null);
 			});
@@ -726,7 +727,7 @@ public class BillBrowser extends ModalJFrame implements PatientBillListener {
 
 	private JPanel getJPanelButtons() {
 		if (jPanelButtons == null) {
-			jPanelButtons = new JPanel();
+			jPanelButtons = new JPanel(new WrapLayout());
 			if (MainMenu.checkUserGrants("btnbillnew")) {
 				jPanelButtons.add(getJButtonNew());
 			}
@@ -775,14 +776,15 @@ public class BillBrowser extends ModalJFrame implements PatientBillListener {
 	}
 
 	private JPanel getPanelChoosePatient() {
-		JPanel priceListLabelPanel = new JPanel();
-		priceListLabelPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+		JPanel priceListLabelPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
 		JButton jAffiliatePersonJButtonAdd = new JButton();
 		jAffiliatePersonJButtonAdd.setIcon(new ImageIcon("rsc/icons/pick_patient_button.png"));
+		jAffiliatePersonJButtonAdd.setToolTipText(MessageBundle.getMessage("angal.billbrowser.selectapatient.tooltip"));
 
 		JButton jAffiliatePersonJButtonSupp = new JButton();
 		jAffiliatePersonJButtonSupp.setIcon(new ImageIcon("rsc/icons/remove_patient_button.png"));
+		jAffiliatePersonJButtonSupp.setToolTipText(MessageBundle.getMessage("angal.billbrowser.removeapatient.tooltip"));
 
 		jAffiliatePersonJTextField = new JTextField(14);
 		jAffiliatePersonJTextField.setEnabled(false);
@@ -914,8 +916,9 @@ public class BillBrowser extends ModalJFrame implements PatientBillListener {
 						.withDayOfMonth(1)
 						.atStartOfDay();
 				dateTo = LocalDate.now()
+						.withYear(year)
 						.withMonth(12)
-						.withDayOfMonth(YearMonth.of(LocalDate.now().getYear(), month).lengthOfMonth())
+						.withDayOfMonth(YearMonth.of(year, 12).lengthOfMonth())
 						.atStartOfDay()
 						.toLocalDate()
 						.atTime(LocalTime.MAX);
