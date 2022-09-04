@@ -30,11 +30,14 @@ import javax.swing.JFrame;
 
 import org.isf.generaldata.Version;
 import org.isf.menu.manager.Context;
+import org.isf.utils.jobjects.MessageDialog;
 import org.isf.utils.jobjects.WaitCursorEventQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.andreidodu.jlock.JLock;
 
 public class Menu {
 
@@ -75,13 +78,12 @@ public class Menu {
 	}
 
 	/**
-	 * A very optimistic test for ensuring we at least have a minimal required Java version. It will not fail when we
-	 * cannot determine the result. In essence, this method splits a version string using {@link
-	 * Menu#DELIMITER} and compares two version number by number.
+	 * A very optimistic test for ensuring we at least have a minimal required Java version. It will not fail when we cannot determine the result. In essence,
+	 * this method splits a version string using {@link Menu#DELIMITER} and compares two version number by number.
 	 *
-	 * @param requiredVersion Should be in the form X.X.X_XXX where X are integers.
-	 * @return true if the numbers in version available for comparison are all greater-equals the currently running Java
-	 * version.
+	 * @param requiredVersion
+	 *            Should be in the form X.X.X_XXX where X are integers.
+	 * @return true if the numbers in version available for comparison are all greater-equals the currently running Java version.
 	 */
 	public static boolean isAtLeastVersion(String requiredVersion) {
 		String runningVersion = System.getProperty("java.version");
@@ -104,6 +106,15 @@ public class Menu {
 	}
 
 	public static void main(String[] args) {
+
+		JFrame tmpJFrame = new JFrame();
+		JLock jLock = new JLock("open_hospital");
+		if (jLock.isLocked()) {
+			MessageDialog.error(tmpJFrame, "Open Hospital is already running!");
+			System.exit(3);
+		}
+		tmpJFrame.dispose();
+
 		ApplicationContext context = null;
 		try {
 			context = new ClassPathXmlApplicationContext("applicationContext.xml");

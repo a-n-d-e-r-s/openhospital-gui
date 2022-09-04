@@ -250,6 +250,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>com.andreidodu</groupId>
+			<artifactId>JLock</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
 			<groupId>org.isf</groupId>
 			<artifactId>OH-core</artifactId>
 			<version>${oh.version}</version>

@@ -38,8 +38,11 @@ import org.isf.session.LogoutEventListener;
 import org.isf.session.SessionRefresheTimerRunnable;
 import org.isf.session.UserSession;
 import org.isf.utils.jobjects.DelayTimer;
+import org.isf.utils.jobjects.MessageDialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.andreidodu.jlock.JLock;
 
 class SplashWindow3 extends JWindow {
 

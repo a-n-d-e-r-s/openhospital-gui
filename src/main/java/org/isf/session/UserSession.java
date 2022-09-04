@@ -100,8 +100,7 @@ public class UserSession {
 						System.exit(2);
 					}
 
-					MainMenu mainMenu = new MainMenu(getUser());
-					setMainMenu(mainMenu);
+					new MainMenu(getUser());
 					getTimer().startTimer();
 					LOGGER.debug("Session refreshed...");
 
