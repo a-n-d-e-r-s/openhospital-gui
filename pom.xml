@@ -1,6 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<name>OpenHospital-gui</name>
@@ -251,8 +249,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.andreidodu</groupId>
-			<artifactId>JLock</artifactId>
-			<version>0.1</version>
+			<artifactId>jlock</artifactId>
+			<version>0.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.isf</groupId>
@@ -394,4 +392,13 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub AndreiDodu Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/AndreiDodu/jlock</url>
+		</repository>
+	</repositories>
+
 </project>

@@ -108,7 +108,7 @@ public class Menu {
 	public static void main(String[] args) {
 
 		JFrame tmpJFrame = new JFrame();
-		JLock jLock = new JLock("open_hospital");
+		JLock jLock = new JLock("open_hospital", true);
 		if (jLock.isLocked()) {
 			MessageDialog.error(tmpJFrame, "Open Hospital is already running!");
 			System.exit(3);
