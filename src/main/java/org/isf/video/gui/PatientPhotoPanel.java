@@ -70,7 +70,7 @@ public class PatientPhotoPanel extends JPanel {
 
 	private final PhotoboothPanelPresentationModel photoboothPanelPresentationModel;
 
-	private static final int MAXPROFPICFILESIZEBYTES = 4194304;
+	private static final int MAXPROFPICFILESIZEBYTES = 4096;
 	
 	public PatientPhotoPanel(final PatientInsertExtended patientFrame, final Integer code, final Image patientPhoto) throws IOException {
 		owner = patientFrame;
@@ -117,7 +117,7 @@ public class PatientPhotoPanel extends JPanel {
 					BufferedImage bi = (BufferedImage) propertyChangeEvent.getNewValue();
 					if (bi != null) {
 						externalPanel.updatePhoto(ImageUtil.scaleImage(bi, 160, 160));
-						patientFrame.setPatientPhoto(ImageUtil.fixImageFileSize(bi, MAXPROFPICFILESIZEBYTES, "png"));
+						patientFrame.setPatientPhoto(ImageUtil.fixImageFileSize(bi, MAXPROFPICFILESIZEBYTES, "jpg"));
 					} 
 				} catch (IOException e1) {
 					LOGGER.error("Oooops! Can't resize profile picture.");

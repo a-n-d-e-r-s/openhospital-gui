@@ -31,6 +31,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import org.imgscalr.Scalr;
+import org.imgscalr.Scalr.Method;
 
 import com.twelvemonkeys.image.ResampleOp;
 
@@ -64,7 +65,7 @@ public final class ImageUtil {
 	public static byte[] imageToByte(final BufferedImage bufferedImage) {
 		try {
 			final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-			ImageIO.write(bufferedImage, "png", outStream);
+			ImageIO.write(bufferedImage, "jpg", outStream);
 			return outStream.toByteArray();
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to convert image to byte array", e);
@@ -72,16 +73,25 @@ public final class ImageUtil {
 	}
 
 	public static BufferedImage fixImageFileSize(BufferedImage bufferedImage, int maximumFileSize) throws IOException {
-		return fixImageFileSize(bufferedImage, maximumFileSize, "png");
+		return fixImageFileSize(bufferedImage, maximumFileSize, "jpg");
 	}
 
 	public static BufferedImage fixImageFileSize(BufferedImage bufferedImage, int maximumFileSize, String fileType)
 			throws IOException {
 		long arrSize = getArraySize(bufferedImage, fileType);
-		while (arrSize > maximumFileSize) {
+		int i = 100;
+		while (arrSize > maximumFileSize && i > 0) {
 			int newTargetSize = (bufferedImage.getTileWidth() - ((bufferedImage.getTileWidth() / 100) * 10));
-			bufferedImage = Scalr.resize(bufferedImage, newTargetSize);
+			bufferedImage = Scalr.resize(bufferedImage, Method.BALANCED, newTargetSize);
 			arrSize = getArraySize(bufferedImage, fileType);
+			i--;
+		}
+		i = 100;
+		int newTargetSize = (bufferedImage.getTileWidth() - ((bufferedImage.getTileWidth() / 100) * 10));
+		while (arrSize > maximumFileSize && i > 0) {
+			bufferedImage = Scalr.resize(bufferedImage, Method.BALANCED, newTargetSize);
+			arrSize = getArraySize(bufferedImage, fileType);
+			i--;
 		}
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ImageIO.write(bufferedImage, fileType, baos);
