@@ -1827,8 +1827,6 @@ public class AdmissionBrowser extends ModalJFrame {
 				}
 
 
-				admission.setActive(1);
-
 				// IOoperation result
 				boolean result = false;
 
